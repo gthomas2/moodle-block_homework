@@ -14,15 +14,21 @@ define(['jquery',
     'block_homework/zebra_tooltips',
     'block_homework/select2',
     'block_homework/datepicker',
-    'block_homework/form_validate'], function ($,$bootstrapjs,$sumoselectjs,$bootstrapswitchjs,$zebrajs,$select2js,$dpjs,$validatorjs) {
+    'block_homework/form_validate',
+    'block_homework/util'], function ($,$bootstrapjs,$sumoselectjs,$bootstrapswitchjs,$zebrajs,$select2js,$dpjs,$validatorjs,util) {
 
     "use strict";
 
     var setscreen = function () {
-
-        var strs = M.str.block_homework;
         
-        this.start = function () {
+        var strs;
+        
+        var init = function () {
+            // Note, M.str.block_homework can only be referenced once the variable is established in memory which may be AFTER first.js has loaded.
+            // This function (init) get's called once M.str.block_homework is available.
+            // This is a bodge fix - really instead of using M.str.block_homework in an AMD module, we should be using the core/str module for strings.
+            strs = M.str.block_homework;
+            
             // No point doing all the fancy stuff on the submission page.
             if ($('#ond_form').length === 0) {
                 return;
@@ -99,6 +105,15 @@ define(['jquery',
                 'opacity': '1'
             });
         };
+        
+        this.start = function() {
+            var condition = function() {
+                return typeof M != 'undefined'
+                    && typeof M.str != 'undefined'
+                    && typeof M.str.block_homework != 'undefined';
+            };
+            util.whenTrue(condition, init, true, 20);
+        };
 
         var cancelScreen = function() {
             var url = M.cfg.wwwroot;
@@ -110,7 +125,6 @@ define(['jquery',
         };
         
         var customValidate = function(control){
-            var strs = M.str.block_homework;
             var error = '';
             if (control.attr("id") == "due") {
                 if ($('#due').datepicker('getDate') <= $('#available').datepicker('getDate')) {

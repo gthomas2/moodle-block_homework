@@ -11,17 +11,23 @@
 define(['jquery',
     'block_homework/filterable_exportable_table',
     'block_homework/bootstrap-switch',
-    'block_homework/form_validate'], function ($,$fetable,$bootstrapswitchjs,$validatorjs) {
+    'block_homework/form_validate',
+    'block_homework/util'], function ($,$fetable,$bootstrapswitchjs,$validatorjs,util) {
 
     "use strict";
 
     var markscreen = function () {
 
-        var strs = M.str.block_homework;
         var achievementpoints = [], behaviourpoints = [];
         var errors = [];
-        
-        this.start = function (pointslist) {
+        var strs;
+
+        var init = function (pointslist) {
+            // Bodge fix - strs get's set once init is called which is after
+            // M.str.block_homework has been established.
+            // Should be using amd core/str module for strings.
+            strs = M.str.block_homework;
+            
             achievementpoints = pointslist.achievement;
             behaviourpoints = pointslist.behaviour;
             
@@ -76,6 +82,17 @@ define(['jquery',
                 M.cfg.wwwroot + '/blocks/homework', 
                 {"paging" : false,
                  "scrollY" : false });
+        };
+        
+        this.start = function(pointslist) {
+            var condition = function() {
+                return typeof M != 'undefined'
+                    && typeof M.str != 'undefined'
+                    && typeof M.str.block_homework != 'undefined';
+            };
+            util.whenTrue(condition, function() {
+                init(pointslist);
+            }, true, 20);
         };
 
         // private functions
