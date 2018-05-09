@@ -44,6 +44,12 @@ $string['notapplicable'] = 'N/A';
 $string['versionx'] = 'Version {$a}';
 $string['sendnotifications'] = 'Send homework notifications';
 
+// Clone.
+$string['clone'] = 'Clone';
+$string['clonehomework'] = 'Clone homework with subject "{$a}" ?';
+$string['error:clonesrcnotyours'] = 'You can only clone homework that you have set yourself.';
+$string['error:cloneisnotinpast'] = 'You can only clone homework that has a past due date and available from date';
+
 // Page base.
 $string['pageerror'] = 'Sorry, there\'s been a bit of a problem: {$a}';
 $string['contactsupport'] = 'Please report bugs to your support department if you have one, otherwise to <a href="mailto:support@overnetdata.com">support@overnetdata.com</a>.';
@@ -58,7 +64,6 @@ $string['setanotherassignment_title'] = 'Add another assignment activity';
 $string['tryagain'] = 'Try again';
 $string['tryagain_title'] = 'Try adding another homework assignment';
 $string['createnewassignmentactivity'] = 'New homework assignment';
-$string['clone_'] = 'Clone ';
 $string['cloneexistingactivity'] = 'Clone existing activity...';
 $string['changecourse'] = 'Change';
 $string['communicatormissing'] = 'This feature is only available if you have a licence for <a href="http://www.overnetdata.com/products/edulink-communicator/introduction/">EduLink Communicator</a>. Please contact Overnet Data or your reseller.';
@@ -191,6 +196,7 @@ $string['thishomeworkisdue'] = 'This homework is due';
 $string['thishomeworkisdone'] = 'This homework has been completed';
 $string['actions'] = 'Actions';
 $string['mark'] = 'Mark';
+$string['filtersetbyme'] = 'Filter to items set by me';
 
 // View individual assignment screen.
 $string['details'] = 'Details';

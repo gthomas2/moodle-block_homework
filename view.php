@@ -51,7 +51,7 @@ class block_homework_view_page extends e\block_homework_form_page_base {
             $title = $this->get_str('viewhomework');
         }
 
-        $this->userid = $USER->id;
+        $this->userid = optional_param('displayuserid', null, PARAM_INT);
         $this->usertype = block_homework_moodle_utils::get_user_type($this->userid);
         if ($this->usertype == "employee") {
             $title .= $this->get_str('teacherview');
@@ -92,6 +92,8 @@ class block_homework_view_page extends e\block_homework_form_page_base {
     }
 
     protected function get_form_settings() {
+        global $USER, $SESSION;
+
         $htmllist = '<div id="ond_homework_list_loading" class="ond_ajax_loading_big">' . $this->get_str('loadingdata') . '</div>';
         $htmllist .= '<div id="ond_homework_list_loaded" style="display:none;"></div>';
 
@@ -115,6 +117,11 @@ class block_homework_view_page extends e\block_homework_form_page_base {
             'sesskey' => array('type' => 'hidden', 'value' => sesskey()),
             'marking' => array('type' => 'hidden', 'value' => optional_param('mark', 0, PARAM_INT)),
             'date' => array('type' => 'hidden', 'value' => $date));
+
+        if ($this->usertype == 'employee' && $myorchilduserid === null || ($myorchilduserid === $USER->id)) {
+            $filtersetbyme = !empty($SESSION->filtersetbyme) ? $SESSION->filtersetbyme : 0;
+            $form[$listtab]['filtersetbyme'] = array('type' => 'switch', 'value' => $filtersetbyme, 'prompt' => $this->get_str('filtersetbyme'));
+        }
         if ($this->usertype == "parent") {
             $form[$listtab]['user1'] = array('type' => 'select', 'prompt' => 'Child', 'options' => $this->children);
         }

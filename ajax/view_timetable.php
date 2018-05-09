@@ -31,12 +31,30 @@ class ajaxgen_view_timetable extends ajaxgen_base {
 
     protected $edulinkpresent = false;
 
+    protected $viewall = false;
+
     public static function factory() {
         return new ajaxgen_view_timetable();
     }
 
+    /**
+     * Get homework for course but display all homework items if that is current behaviour.
+     * @param int $courseid
+     * @param int $displayuserid
+     * @param bool $onlyifavailable
+     * @param int $maxdays
+     * @return array
+     */
+    protected function get_homework_for_course($courseid, $displayuserid, $onlyifavailable = false, $maxdays = 28) {
+        if (!$this->viewall) {
+            return block_homework_utils::get_homework_for_course($courseid, $displayuserid, $onlyifavailable, $maxdays);
+        } else {
+            return block_homework_utils::get_homework_for_course($courseid, null, $onlyifavailable, $maxdays);
+        }
+    }
+
     public function __construct() {
-        global $CFG, $USER, $PAGE;
+        global $CFG, $USER, $PAGE, $SESSION;
         require_login();
         $PAGE->set_context(\context_system::instance());
 
@@ -47,9 +65,17 @@ class ajaxgen_view_timetable extends ajaxgen_base {
         }
         $siteid = get_site()->id;
         $courseid = optional_param('course', $siteid, PARAM_INT);
-        $displayuserid = optional_param('displayuser', $USER->id, PARAM_INT);
-        $userid = optional_param('user', $USER->id, PARAM_INT);
         $usertype = optional_param('usertype', "learner", PARAM_ALPHANUMEXT);
+        $displayuserid = optional_param('displayuser', null, PARAM_INT);
+        $filtersetbyme = optional_param('filtersetbyme', 0, PARAM_INT);
+        $SESSION->filtersetbyme = $filtersetbyme;
+
+        if (empty($displayuserid)) {
+            if (empty($filtersetbyme)) {
+                $this->viewall = true;
+            }
+            $displayuserid = $USER->id;
+        }
         $date = optional_param('date', date('Y-m-d'), PARAM_ALPHANUMEXT);
         $marking = optional_param('marking', 0, PARAM_INT) == 1;
 
@@ -66,6 +92,7 @@ class ajaxgen_view_timetable extends ajaxgen_base {
             if ($marking) {
                 $table->add_header(new e\htmlTableHeader(null, null, $this->get_str('actions')));
             } else {
+                $table->add_header(new e\htmlTableHeader(null, null, null));
                 $table->add_header(new e\htmlTableHeader(null, "ond_cell_date", $this->get_str('dateavailable')));
             }
         }
@@ -104,7 +131,7 @@ class ajaxgen_view_timetable extends ajaxgen_base {
             $accessallgroups = $course->groupmode != 1 || has_capability('moodle/site:accessallgroups', $coursecontext);
             $viewhiddenactivities = is_siteadmin() || has_capability('moodle/course:viewhiddenactivities', $coursecontext);
 
-            $homeworkactivities = block_homework_utils::get_homework_for_course($course->id, $displayuserid, false, $maxdays);
+            $homeworkactivities = $this->get_homework_for_course($course->id, $displayuserid, false, $maxdays);
             foreach ($homeworkactivities as $item) {
                 // Skip this one if the user is not an activity creator (teacher) or participant in the specific
                 // assignment (student).
@@ -129,6 +156,21 @@ class ajaxgen_view_timetable extends ajaxgen_base {
                         $markcell = new e\htmlTableCell(null, null, $marklink->get_html());
                         $table->add_cell($markcell);
                     } else {
+                        $iteminpast = $item->availabledate < time() && $item->duedate < time();
+                        if ($iteminpast && $item->userid === $USER->id) {
+                            $cloneurl = new moodle_url('/blocks/homework/clone.php', [
+                                'cmid' => $item->id
+                            ]);
+                            $attr = [
+                                'class' => 'ond_action_clone',
+                                'title' => $this->get_str('clone')
+                            ];
+                            $clonelink = html_writer::link($cloneurl, null, $attr);
+                        } else {
+                            $clonelink = '';
+                        }
+                        $actions = new e\htmlTableCell(null, "ond_cell_actions", $clonelink);
+                        $table->add_cell($actions);
                         $datecell = new e\htmlTableCell(null, "ond_cell_date",
                             block_homework_utils::format_date($item->availabledate));
                         $datecell->set_property('data-order', $item->availabledate);
@@ -268,7 +310,7 @@ class ajaxgen_view_timetable extends ajaxgen_base {
                             $subject = '<a href="' . $CFG->wwwroot . '/course/view.php?id=' . $period->courseid . '">' .
                                     $subject . '</a>';
                             if (!isset($homeworkcache[$period->courseid])) {
-                                $homeworkcache[$period->courseid] = block_homework_utils::get_homework_for_course($period->courseid,
+                                $homeworkcache[$period->courseid] = $this->get_homework_for_course($period->courseid,
                                         $displayuserid, false);
                             }
                             $homework = $homeworkcache[$period->courseid];

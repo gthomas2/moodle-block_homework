@@ -76,7 +76,7 @@ class block_homework_utils {
 
     public static function get_homework_for_course($courseid, $userid, $onlyifavailable, $maxdaysage = 28) {
         $homework = array();
-        $activities = block_homework_moodle_utils::get_assignments_on_course($courseid, $maxdaysage);
+        $activities = block_homework_moodle_utils::get_assignments_on_course($courseid, $maxdaysage, $userid);
         foreach ($activities as $activity) {
             $availabledate = (int) $activity->availabledate;
             $duedate = (int) $activity->duedate;
@@ -357,16 +357,26 @@ class block_homework_utils {
         return '#' . self::int_to_hex($rgb[0]) . self::int_to_hex($rgb[1]) . self::int_to_hex($rgb[2]);
     }
 
-    public static function send_new_assignment_notifications() {
+    /**
+     * @return array
+     * @throws dml_exception
+     */
+    private static function get_unsent_assignment_notifications() {
         global $DB;
         // Get list of homework assignments where notifications haven't been sent and allowsubmissionsfromdate is past.
         $sql = 'SELECT bha.*, cm.course, a.name, a.duedate FROM {block_homework_assignment} bha ' .
-                'JOIN {course_modules} cm ON (cm.id = bha.coursemoduleid) ' .
-                'JOIN {assign} a ON (a.id = cm.instance) ' .
-                'WHERE bha.notificationssent = 0 AND a.allowsubmissionsfromdate < ? AND a.duedate > ?';
+            'JOIN {course_modules} cm ON (cm.id = bha.coursemoduleid) ' .
+            'JOIN {assign} a ON (a.id = cm.instance) ' .
+            'WHERE bha.notificationssent = 0 AND a.allowsubmissionsfromdate < ?';
         $now = time();
-        $params = array($now, $now);
-        $rows = $DB->get_records_sql($sql, $params);
+        $params = [$now];
+        return $DB->get_records_sql($sql, $params);
+    }
+
+    public static function send_new_assignment_notifications() {
+        global $DB;
+        $rows = self::get_unsent_assignment_notifications();
+
         foreach ($rows as $row) {
             $assignmentduedate = self::format_date($row->duedate);
             if (empty($row->duration)) {

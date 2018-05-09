@@ -530,6 +530,13 @@ span.ond_homework_timetable_due {
 .ond_viewreports {
     background: #cc33ff;
 }
+.ond_action_clone {
+    width: 1em;
+    height: 1em;
+    /* This is dreadful - because the homework block doesn't use regular styles.css you can't use [[pix */
+    background: transparent url('../../../pix/e/copy.svg') no-repeat center top;
+    display: inline-block;
+}
 
 .ond_mark_button:before {
     padding-right: 4px;

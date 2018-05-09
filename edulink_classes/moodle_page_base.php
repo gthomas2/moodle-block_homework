@@ -42,10 +42,14 @@ abstract class block_homework_moodle_page_base {
     protected $onfrontpage;
     protected $title;
     protected $userid;
+    protected $cacherev;
 
     public function __construct() {
-        global $CFG, $PAGE, $OUTPUT, $USER;
+        global $CFG, $PAGE, $OUTPUT, $USER, $DB;
         require_login();
+
+        $this->cacherev = $DB->get_field('course', 'cacherev', array('id' => SITEID));
+
         $PAGE->set_context(\context_system::instance());
         $this->userid = $USER->id;
 
@@ -141,6 +145,11 @@ abstract class block_homework_moodle_page_base {
      */
     protected function use_stylesheet($cssfilename) {
         global $PAGE;
+        if (substr($cssfilename, -4) === '.css') {
+            // Slap a cache buster on the end of the css.
+            // If we were using a standard moodle styles.css we wouldn't have to worry about this :-(.
+            $cssfilename .= '?cacherev='.$this->cacherev;
+        }
         $PAGE->requires->css(new \moodle_url($cssfilename));
     }
 

@@ -8,7 +8,7 @@
 /* jshint eqeqeq: false */
 /* globals M, define */
 define(['jquery',
-    'block_homework/filterable_exportable_table'], function ($,$fetable) {
+    'block_homework/filterable_exportable_table', 'block_homework/bootstrap-switch'], function ($,$fetable,$bsswitch) {
 
     "use strict";
 
@@ -18,9 +18,16 @@ define(['jquery',
         var strs = M.str.block_homework;
         var on_list_view_tab = true;
         var assignments_table_done = false;
-        
+
         this.start = function () {
-            
+
+            // Turn checkboxes into nice toggle switches.
+            // GT - I've added this for consistency.
+            // Have to say, having yet another form library instead of using mforms seems like a bad idea to me.
+            if ($.fn.bootstrapSwitch) {
+                $('input[type=checkbox][data-toggle=toggle]').bootstrapSwitch({handleWidth:40,labelWidth:1,onText:strs.on,offText:strs.off});
+            }
+
             $('#user1').on('change',function() {
                 $('#displayuser').val($('#user1').val());
                 $('#user2').val($('#user1').val());
@@ -31,11 +38,15 @@ define(['jquery',
                 $('#user1').val($('#user2').val());
                 refresh();
             });
-            
+
             $('#date').on('change',function() {
-               refresh(); 
+                refresh();
             });
-            
+
+            $('#filtersetbyme').on('switchChange.bootstrapSwitch', function() {
+                refresh();
+            });
+
             $('#List_view-tab').on('shown.bs.tab', function(e) {
                 on_list_view_tab = true;
                 refreshAssignmentsList();
@@ -47,7 +58,7 @@ define(['jquery',
 
             refresh();
         };
-        
+
         var refresh = function () {
             $('#date').prop('disabled',true);
             $('#ond_homework_list_loaded').css("display","none");
@@ -63,7 +74,9 @@ define(['jquery',
                             displayuser: $('#displayuser').val(),
                             user: $('#user').val(),
                             usertype: $('#usertype').val(),
-                            marking: $('#marking').val() };
+                            marking: $('#marking').val(),
+                            filtersetbyme: $('#filtersetbyme').bootstrapSwitch('state') ? 1 : 0
+            };
 
             $.ajax({
                     method: "POST",
@@ -77,7 +90,7 @@ define(['jquery',
                         $('#ond_homework_list_loading').css("display","none");
                         $('#ond_homework_list_loaded').css("display","block");
                         refreshAssignmentsList();
-                        
+
                         $('#ond_homework_timetable_loaded').html(data.htmltimetable);
                         $('#ond_homework_timetable_loading').css("display","none");
                         $('#ond_homework_timetable_loaded').css("display","block");
@@ -95,7 +108,7 @@ define(['jquery',
                 displayError(errorThrown);
             });
         };
-        
+
         var displayError = function (error) {
             error = strs.failedtofetchdata + ':<br>' + error;
             $('#ond_homework_list_loading').css("display","none");
@@ -107,7 +120,7 @@ define(['jquery',
                 $('#ond_homework_timetable_loaded').css("display","block");
             }
         };
-        
+
         // Only update the datatable when visible or it messes up the column headers.
         var refreshAssignmentsList = function () {
             if ($('#ond_homework_list') && !assignments_table_done) {
