@@ -25,6 +25,7 @@
 $string['homework:addinstance'] = 'Add a Homework block';
 $string['homework:myaddinstance'] = 'Add a Homework block to my Moodle';
 $string['homework:viewreports'] = 'View Homework reports';
+$string['homework:deleteany'] = 'Delete any homework item';
 
 // Block list.
 $string['pluginname'] = 'Homework';
@@ -197,6 +198,8 @@ $string['thishomeworkisdone'] = 'This homework has been completed';
 $string['actions'] = 'Actions';
 $string['mark'] = 'Mark';
 $string['filtersetbyme'] = 'Filter to items set by me';
+$string['error:deleteitemnotyours'] = 'The homework item selected for deletion does not belong to you.';
+$string['error:onlydeletefutureassignments'] ='Only future assignments can be deleted';
 
 // View individual assignment screen.
 $string['details'] = 'Details';
@@ -261,6 +264,8 @@ $string['behaviourpoints'] = 'Points';
 
 $string['nothingdone'] = 'Nothing done';
 $string['nothingdonefull'] = 'No grades added or modified; nothing to save!';
+
+$string['deletehomework'] = 'Delete homework with subject "{$a}" ?';
 
 // Reports screen.
 $string['viewhomeworkreports'] = 'Homework Reports';

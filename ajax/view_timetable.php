@@ -58,6 +58,8 @@ class ajaxgen_view_timetable extends ajaxgen_base {
         require_login();
         $PAGE->set_context(\context_system::instance());
 
+        $candeleteany = has_capability('block/homework:deleteany', context_system::instance());
+
         $homeworkaccessfile = block_homework_moodle_utils::is_edulink_present();
         if ($homeworkaccessfile !== false) {
             $this->edulinkpresent = true;
@@ -156,7 +158,9 @@ class ajaxgen_view_timetable extends ajaxgen_base {
                         $markcell = new e\htmlTableCell(null, null, $marklink->get_html());
                         $table->add_cell($markcell);
                     } else {
+                        $actionshtml = '';
                         $iteminpast = $item->availabledate < time() && $item->duedate < time();
+                        $iteminfuture = $item->duedate > time();
                         if ($iteminpast && $item->userid === $USER->id) {
                             $cloneurl = new moodle_url('/blocks/homework/clone.php', [
                                 'cmid' => $item->id
@@ -169,7 +173,20 @@ class ajaxgen_view_timetable extends ajaxgen_base {
                         } else {
                             $clonelink = '';
                         }
-                        $actions = new e\htmlTableCell(null, "ond_cell_actions", $clonelink);
+                        if ($iteminfuture) {
+                            if ($item->userid === $USER->id || $candeleteany) {
+                                $actionshtml .= $clonelink;
+                                $attr = [
+                                    'class' => 'ond_action ond_action_delete',
+                                    'title' => $this->get_str('delete')
+                                ];
+                            }
+                        }
+                        $delurl = new moodle_url('/blocks/homework/delete.php', [
+                            'cmid' => $item->id
+                        ]);
+                        $actionshtml .= html_writer::link($delurl, null, $attr);
+                        $actions = new e\htmlTableCell(null, "ond_cell_actions", $actionshtml);
                         $table->add_cell($actions);
                         $datecell = new e\htmlTableCell(null, "ond_cell_date",
                             block_homework_utils::format_date($item->availabledate));
