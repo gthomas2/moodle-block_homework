@@ -60,6 +60,7 @@ $delurl = new moodle_url('/blocks/homework/delete.php', ['cmid' => $cmid, 'confi
 
 if ($confirm) {
     assign_delete_instance($assign->id);
+    rebuild_course_cache($course->id, true);
     $DB->delete_records('block_homework_assignment', ['id' => $row->id]);
     redirect($returl);
 }
