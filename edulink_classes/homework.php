@@ -566,8 +566,12 @@ class block_homework_utils {
         }
         if ($notifyotheremail != '') {
             if (class_exists('block_homework_utils_extended')) {
-                $error = block_homework_utils_extended::send_email($assignmentowner, $notifyotheremail, '', $notificationsubject,
-                    $notificationbody);
+                $notifyotheremails = explode(',', $notifyotheremail);
+                foreach ($notifyotheremails as $emailother) {
+                    $emailother = trim($emailother);
+                    $error = block_homework_utils_extended::send_email($assignmentowner, $emailother, '', $notificationsubject,
+                        $notificationbody);
+                }
             } else {
                 $error = 'Incomplete installation';
             }

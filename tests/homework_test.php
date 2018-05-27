@@ -196,4 +196,64 @@ class block_homework_homework_test extends \advanced_testcase {
     public function test_mail_not_append_assignment_link() {
         $this->test_mail_append_assignment_link(0);
     }
+
+    /**
+     * Make sure csv "notify other email" results in multiple emails.
+     * @throws \coding_exception
+     * @throws \moodle_exception
+     */
+    public function test_notifyotheremail() {
+        global $USER;
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        // Catch emails.
+        $mailsink = $this->redirectEmails();
+
+        $dg = $this->getDataGenerator();
+        $user = $dg->create_user();
+        $course = $dg->create_course();
+        $dg->enrol_user($user->id, $course->id, 'student');
+        $assignmentduedate = time() + WEEKSECS;
+        $subject = 'Assignment notifyother test';
+        $assignmentowner = $USER;
+
+        $record = [
+            'allowsubmissionsfromdate' => time() - WEEKSECS,
+            'course' => $course->id,
+            'duedate' => $assignmentduedate,
+            'name' => $subject
+        ];
+        $assign = $dg->create_module('assign', $record);
+        list($course, $cm) = get_course_and_cm_from_instance($assign->id, 'assign');
+
+        // Test admin email.
+        set_config('new_assign_notification_message',
+            get_string('newassignmentnotificationmessagedefaultnolink', 'block_homework'), 'block_homework');
+
+        $csvnotifyother = 'other1@test.local,other2@test.local,other3@test.local';
+
+        block_homework_utils::notify_admin($course->id, $cm->id, $subject, $subject, $assignmentowner,
+            $csvnotifyother);
+
+        $messages = $mailsink->get_messages();
+        $tos = [];
+        foreach ($messages as $message) {
+            $tos[] = $message->to;
+        }
+        $mailsink->clear();
+
+        $expectedtos = explode(',', $csvnotifyother);
+
+        $this->assertEquals($expectedtos, $tos);
+
+        // Make sure single no CSV notifyother works
+        block_homework_utils::notify_admin($course->id, $cm->id, $subject, $subject, $assignmentowner,
+            'singleemail@test.local');
+        $this->assertEquals(1, $mailsink->count());
+        $messages = $mailsink->get_messages();
+        $message = reset($messages);
+        $this->assertEquals('singleemail@test.local', $message->to);
+    }
 }
