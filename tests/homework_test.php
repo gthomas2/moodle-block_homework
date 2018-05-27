@@ -46,6 +46,28 @@ class block_homework_homework_test extends \advanced_testcase {
         require_once(__DIR__.'/../edulink_classes/homework.php');
     }
 
+    protected function create_hw_tracking_record($cmid, $userid, $subject, $body, $opts = []) {
+        $defaults = [
+            'duration' => WEEKSECS,
+            'notifyother' => 0,
+            'notifyotheremail' => null,
+            'notifyparents' => 0,
+            'notesforparentssubject' => $subject,
+            'notesforparents' => $body,
+            'notifylearners' => 1,
+            'notesforlearnerssubject' => $subject,
+            'notesforlearners' => $body
+        ];
+        $vals = $defaults;
+        foreach ($opts as $opt => $val) {
+            $vals[$opt] = $val;
+        }
+        \block_homework_utils::add_homework_tracking_record($cmid, $userid, $subject,
+            $vals['duration'], $vals['notifyother'], $vals['notifyotheremail'],
+            $vals['notifyparents'], $vals['notesforparentssubject'], $vals['notesforparents'],
+            $vals['notifylearners'], $vals['notesforlearnerssubject'], $vals['notesforlearners']);
+    }
+
     public function test_get_unsent_assignment_notifications() {
         global $DB;
 
@@ -61,7 +83,7 @@ class block_homework_homework_test extends \advanced_testcase {
         $dg = $this->getDataGenerator();
         $course = $dg->create_course();
         $user = $dg->create_user();
-        $dg->enrol_user($user->id, $course->id);
+        $dg->enrol_user($user->id, $course->id, 'student');
 
         // Create assignment in future and test for 1 notification pending.
         $record = [
@@ -72,19 +94,7 @@ class block_homework_homework_test extends \advanced_testcase {
         $assign = $dg->create_module('assign', $record);
         list($course, $cm) = get_course_and_cm_from_instance($assign->id, 'assign');
         $subject = 'Assignment in future';
-        $duration = WEEKSECS;
-        $notifyother = 0;
-        $notifyotheremail = null;
-        $notifyparents = 0;
-        $notesforparentssubject = null;
-        $notesforparents = null;
-        $notifylearners = 1;
-        $notesforlearnerssubject = 'Learners notification subject';
-        $notesforlearners = 'Some notes for learners';
-        \block_homework_utils::add_homework_tracking_record($cm->id, $user->id, $subject, $duration,
-            $notifyother, $notifyotheremail,
-            $notifyparents, $notesforparentssubject, $notesforparents,
-            $notifylearners, $notesforlearnerssubject, $notesforlearners);
+        $this->create_hw_tracking_record($cm->id, $user->id, $subject, 'Body test');
         $unsent = \phpunit_util::call_internal_method(null, 'get_unsent_assignment_notifications', [],
             block_homework_utils::class);
         $this->assertCount(1, $unsent);
@@ -98,10 +108,7 @@ class block_homework_homework_test extends \advanced_testcase {
         $assign = $dg->create_module('assign', $record);
         list($course, $cm) = get_course_and_cm_from_instance($assign->id, 'assign');
         $subject = 'Assignment in past';
-        \block_homework_utils::add_homework_tracking_record($cm->id, $user->id, $subject, $duration,
-            $notifyother, $notifyotheremail,
-            $notifyparents, $notesforparentssubject, $notesforparents,
-            $notifylearners, $notesforlearnerssubject, $notesforlearners);
+        $this->create_hw_tracking_record($cm->id, $user->id, $subject, 'Body test');
         $unsent = \phpunit_util::call_internal_method(null, 'get_unsent_assignment_notifications', [],
             block_homework_utils::class);
         $this->assertCount(2, $unsent);
@@ -113,5 +120,80 @@ class block_homework_homework_test extends \advanced_testcase {
         $unsent = \phpunit_util::call_internal_method(null, 'get_unsent_assignment_notifications', [],
             block_homework_utils::class);
         $this->assertCount(1, $unsent);
+    }
+
+    public function test_mail_append_assignment_link($emailtemplatelinkappend = 1) {
+        global $USER;
+
+        set_config('student_email_template_exclude_link', $emailtemplatelinkappend, 'block_homework');
+        set_config('admin_email_template_exclude_link', $emailtemplatelinkappend, 'block_homework');
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        // Catch emails.
+        $mailsink = $this->redirectEmails();
+
+        $dg = $this->getDataGenerator();
+        $user = $dg->create_user();
+        $course = $dg->create_course();
+        $dg->enrol_user($user->id, $course->id, 'student');
+        $assignmentduedate = time() + WEEKSECS;
+        $assignmentduration = DAYSECS;
+        $subject = 'Assignment test';
+        $messagebody = '<p>Some message body before the assignment link</p>';
+
+        $record = [
+            'allowsubmissionsfromdate' => time() - WEEKSECS,
+            'course' => $course->id,
+            'duedate' => $assignmentduedate,
+            'name' => $subject
+        ];
+        $assign = $dg->create_module('assign', $record);
+        list($course, $cm) = get_course_and_cm_from_instance($assign->id, 'assign');
+
+        $this->create_hw_tracking_record($cm->id, $user->id, $subject, 'Body test');
+        $assignmentowner = $USER;
+
+        // Test learner email.
+        block_homework_utils::notify_learners($course->id, $cm->id, $subject, $subject, $assignmentowner,
+            $assignmentduedate, $assignmentduration, $subject, $messagebody);
+
+        $messages = $mailsink->get_messages();
+        $message = reset($messages);
+        $mailsink->clear();
+        $body = quoted_printable_decode($message->body);
+        $linkappendstr = '<p data-link-appended="true">The assignment can be viewed here';
+
+        if ($emailtemplatelinkappend) {
+            $expectedneedle = $messagebody . $linkappendstr;
+            $this->assertContains($expectedneedle, $body);
+        } else {
+            $this->assertNotContains($linkappendstr, $body);
+        }
+
+        // Test admin email.
+        set_config('new_assign_notification_message',
+                get_string('newassignmentnotificationmessagedefaultnolink', 'block_homework'), 'block_homework');
+
+        block_homework_utils::notify_admin($course->id, $cm->id, $subject, $subject, $assignmentowner,
+            'test@local.test');
+
+        $messages = $mailsink->get_messages();
+        $message = reset($messages);
+        $mailsink->clear();
+        $body = quoted_printable_decode($message->body);
+
+        $expectedneedle = 'The following new assignment has been created:';
+        $this->assertContains($expectedneedle, $body);
+        if ($emailtemplatelinkappend) {
+            $this->assertContains($linkappendstr, $body);
+        } else {
+            $this->assertNotContains($linkappendstr, $body);
+        }
+    }
+
+    public function test_mail_not_append_assignment_link() {
+        $this->test_mail_append_assignment_link(0);
     }
 }

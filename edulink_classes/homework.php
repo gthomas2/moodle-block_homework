@@ -493,6 +493,12 @@ class block_homework_utils {
             $variables["learner_firstname"] = $learner->firstname;
             $notificationbody = $messagebody;
             $notificationsubject = $messagesubject;
+            $bodyhaslink = stripos($messagebody, '[assignment_link]') !== false;
+            $emailexcludelink = get_config('block_homework', 'student_email_template_exclude_link');
+            if ($emailexcludelink && !$bodyhaslink) {
+                // Append link to the end.
+                $notificationbody .= get_string('notifylearnersmessagelink', 'block_homework');
+            }
             foreach ($variables as $name => $value) {
                 $notificationbody = str_ireplace('[' . $name . ']', $value, $notificationbody);
                 $notificationsubject = str_ireplace('[' . $name . ']', $value, $notificationsubject);
@@ -532,6 +538,12 @@ class block_homework_utils {
             'course_name' => $course->fullname);
         $notificationbody = get_config('block_homework', 'new_assign_notification_message');
         $notificationsubject = get_config('block_homework', 'new_assign_notification_subject');
+        $bodyhaslink = stripos($notificationbody, '[assignment_link]') !== false;
+        $emailexcludelink = get_config('block_homework', 'admin_email_template_exclude_link');
+        if ($emailexcludelink && !$bodyhaslink) {
+            // Append link to the end.
+            $notificationbody .= get_string('newassignmentnotificationlink', 'block_homework');
+        }
         foreach ($variables as $name => $value) {
             $notificationbody = str_ireplace('[' . $name . ']', $value, $notificationbody);
             $notificationsubject = str_ireplace('[' . $name . ']', $value, $notificationsubject);

@@ -90,8 +90,16 @@ function xmldb_block_homework_upgrade($oldversion = 0) {
             set_config('notify_other', 0, 'block_homework');
             set_config('new_assign_notification_subject',
                     get_string('newassignmentnotificationsubjectdefault', 'block_homework'), 'block_homework');
+
+            if (get_config('block_homework', 'student_email_template_exclude_link')) {
+                $notificationmessage = get_string('newassignmentnotificationmessagedefaultnolink', 'block_homework');
+            } else {
+                $notificationmessage = get_string('newassignmentnotificationmessagedefault', 'block_homework');
+            }
+
             set_config('new_assign_notification_message',
-                    get_string('newassignmentnotificationmessagedefault', 'block_homework'), 'block_homework');
+                $notificationmessage, 'block_homework');
+
             set_config('log_notifications', 0, 'block_homework');
             $transaction->allow_commit();
         } catch (Exception $e) {

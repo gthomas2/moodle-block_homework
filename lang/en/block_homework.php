@@ -148,6 +148,8 @@ $string['mustrestrict'] = 'You must restrict the assignment to at least one grou
 $string['notifyparentsmessage'] = '<p>Dear [parent_title] [parent_lastname]</p><p>The following piece of <strong>[assignment_subject]</strong> homework has been set for <strong>[child_name]</strong>:</p><p><strong>[assignment_name]</strong></p><p>It is due on <strong>[assignment_due_date]</strong> and expected to take approximately <strong>[assignment_duration]</strong>.</p><p>The assignment can be viewed here: <a href="[assignment_link]">[assignment_name]</a></p>';
 $string['notifyparentsmessagesubject'] = '[child_firstname] has new homework';
 $string['notifylearnersmessage'] = '<p>Dear [learner_firstname]</p><p>The following <strong>[assignment_subject]</strong> assignment has been set for you:</p><p><strong>[assignment_name]</strong></p><p>It is due on <strong>[assignment_due_date]</strong> and expected to take approximately <strong>[assignment_duration]</strong>.</p><p>The assignment can be viewed here: <a href="[assignment_link]">[assignment_name]</a></p>';
+$string['notifylearnersmessagenolink'] = '<p>Dear [learner_firstname]</p><p>The following <strong>[assignment_subject]</strong> assignment has been set for you:</p><p><strong>[assignment_name]</strong></p><p>It is due on <strong>[assignment_due_date]</strong> and expected to take approximately <strong>[assignment_duration]</strong>.</p>';
+$string['notifylearnersmessagelink'] = '<p data-link-appended="true">The assignment can be viewed here: <a href="[assignment_link]">[assignment_name]</a></p>';
 $string['notifylearnersmessagesubject'] = 'You have a new assignment';
 $string['durationnotspecified'] = '(duration not specified)';
 $string['parentalnotificationerror'] = 'Error trying to notify parents: {$a}';
@@ -373,6 +375,8 @@ $string['newassignmentnotificationsubjectdefault'] = "New assignment created in 
 $string['newassignmentnotificationmessage'] = 'New assignment notification message';
 $string['newassignmentnotificationmessage_help'] = 'The message to send to assignment creator or third party when a new assignment is created';
 $string['newassignmentnotificationmessagedefault'] = "The following new assignment has been created:\n\n<strong><a href=\"[assignment_link]\">[assignment_name]</a></strong> in <strong>[course_name]</strong>";
+$string['newassignmentnotificationmessagedefaultnolink'] = "The following new assignment has been created:\n\n in <strong>[course_name]</strong>";
+$string['newassignmentnotificationlink'] = '<p data-link-appended="true">The assignment can be viewed here: <a href="[assignment_link]">[assignment_name]</a></p>';
 $string['maxagefuture'] = 'Max days to look into future for block listing (all users)';
 $string['maxagefuture_help'] = 'The number of days into the future that should be included in the block assignments list (all user types view)';
 $string['maxageviewall'] = 'Max days to show assignments for on view all/marking';
@@ -394,3 +398,7 @@ $string['lognotifications_help'] = 'Log notification emails and include the log 
 $string['cachedef_participants'] = 'Cached participant lists for each homework assignment';
 $string['requirerestriction'] = 'Require restriction';
 $string['requirerestriction_help'] = 'Only allow assignment creation if it is restricted to specific group(s) or user(s)';
+$string['studentemailtemplateexcludelink'] = 'Exclude assignment link from student email template and auto append it on send';
+$string['studentemailtemplateexcludelink_help'] = 'The student email template will not include a link to the assignment by default and instead the assignment link will be auto appended on sending the email';
+$string['adminemailtemplateexcludelink'] = 'Exclude assignment link from admin email template and auto append it on send';
+$string['adminemailtemplateexcludelink_help'] = 'The admin email template will not include a link to the assignment by default and instead the assignment link will be auto appended on sending the email';

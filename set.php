@@ -531,7 +531,13 @@ class block_homework_set_page extends e\block_homework_form_page_base {
             'required' => true);
 
         $assnotifylearners = true;
-        $asslearnernotes = $this->get_str('notifylearnersmessage');
+
+        $emailexcludelink = get_config('block_homework', 'student_email_template_exclude_link');
+        if (empty($emailexcludelink)) {
+            $asslearnernotes = $this->get_str('notifylearnersmessage');
+        } else {
+            $asslearnernotes = $this->get_str('notifylearnersmessagenolink');
+        }
         $asslearnernotessubject = $this->get_str('notifylearnersmessagesubject');
         $assnotifyother = false;
         $assnotifyotheremail = '';
@@ -543,7 +549,9 @@ class block_homework_set_page extends e\block_homework_form_page_base {
             if ($row) {
                 $assnotifylearners = true;
                 if (!empty($row->notesforlearners)) {
-                    $asslearnernotes = $row->notesforlearners;
+                    if (empty($emailexcludelink) || stripos($row->notesforlearners, '[assignment_link]') === false) {
+                        $asslearnernotes = $row->notesforlearners;
+                    }
                 }
                 if (!empty($row->notesforlearnerssubject)) {
                     $asslearnernotessubject = $row->notesforlearnerssubject;
