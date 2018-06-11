@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="blocks/homework/db" VERSION="20180422" COMMENT="XMLDB file for Moodle blocks/homework"
+<XMLDB PATH="blocks/homework/db" VERSION="20180611" COMMENT="XMLDB file for Moodle blocks/homework"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -53,6 +53,7 @@
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="coursemoduleid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="moduleviewedon" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="recipientuserid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="recipientemail" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="created" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
@@ -64,6 +65,7 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="ix_i_coursemoduleid" UNIQUE="false" FIELDS="coursemoduleid"/>
+        <INDEX NAME="ix_i_recipientuserid" UNIQUE="false" FIELDS="recipientuserid"/>
       </INDEXES>
     </TABLE>
   </TABLES>

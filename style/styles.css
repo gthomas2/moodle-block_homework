@@ -541,6 +541,9 @@ span.ond_homework_timetable_due {
 .ond_action_delete {
     background: transparent url('../../../pix/t/delete.svg') no-repeat center top;
 }
+.ond_action_edit {
+    background: transparent url('../../../pix/t/edit.svg') no-repeat center top;
+}
 .ond_mark_button:before {
     padding-right: 4px;
     position: relative;

@@ -294,6 +294,7 @@ $string['nottracked'] = 'Not tracked';
 $string['nottrackedfull'] = 'Not tracked (created outside of Homework block)';
 $string['notificationslog'] = 'Notifications Log';
 $string['assignmentnotifications'] = 'Assignment Notifications';
+$string['modulefirstviewed'] = 'First viewed';
 
 // Common to all reports.
 $string['invaliddatesupplied'] = 'Invalid date supplied';

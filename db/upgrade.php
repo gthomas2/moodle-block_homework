@@ -27,11 +27,12 @@ function xmldb_block_homework_upgrade($oldversion = 0) {
     global $DB;
     $result = true;
 
+    $dbman = $DB->get_manager();
+
     if ($oldversion < 2016061000) {
         $transaction = $DB->start_delegated_transaction();
         try {
             print '<h2>1.0.23</h2>';
-            $dbman = $DB->get_manager();
             if ($dbman->table_exists('edulink_homework')) {
                 print '<p>Renaming edulink_homework table to block_homework_assignment</p>';
                 $logtable = new xmldb_table('edulink_homework');
@@ -53,7 +54,6 @@ function xmldb_block_homework_upgrade($oldversion = 0) {
         $transaction = $DB->start_delegated_transaction();
         try {
             print '<h2>1.1.01</h2>';
-            $dbman = $DB->get_manager();
             print '<p>Adding learner notification fields</p>';
             $asstable = new xmldb_table('block_homework_assignment');
             $newfields = array();
@@ -125,7 +125,6 @@ function xmldb_block_homework_upgrade($oldversion = 0) {
         $transaction = $DB->start_delegated_transaction();
         try {
             print '<h2>1.1.16</h2>';
-            $dbman = $DB->get_manager();
             print '<p>Adding notificationssent field to block_homework_assignment table</p>';
             $asstable = new xmldb_table('block_homework_assignment');
             $nsfield = new xmldb_field('notificationssent', XMLDB_TYPE_INTEGER, '10', null, null, null, '0');
@@ -145,6 +144,29 @@ function xmldb_block_homework_upgrade($oldversion = 0) {
             $transaction->rollback($e);
             $result = false;
         }
+    }
+
+    if ($oldversion < 2017052405) {
+
+        // Define field moduleviewedon to be added to block_homework_notification.
+        $table = new xmldb_table('block_homework_notification');
+        $field = new xmldb_field('modulefirstviewed', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'coursemoduleid');
+
+        // Conditionally launch add field moduleviewedon.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define index ix_i_recipientuserid (not unique) to be added to block_homework_notification.
+        $index = new xmldb_index('ix_i_recipientuserid', XMLDB_INDEX_NOTUNIQUE, array('recipientuserid'));
+
+        // Conditionally launch add index ix_i_recipientuserid.
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        // Homework savepoint reached.
+        upgrade_block_savepoint(true, 2017052405, 'homework');
     }
 
     return $result;

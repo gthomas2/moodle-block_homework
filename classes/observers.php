@@ -45,4 +45,29 @@ class observers {
             $DB->execute($sql, array($newmessageid, $oldmessageid));
         }
     }
+
+    private static function log_modulefirstviewed($cmid) {
+        global $DB, $USER;
+
+        // Update course module first viewed timestamp.
+        $params = [$cmid, $USER->id];
+        $rs = $DB->get_records_select('block_homework_notification',
+            'coursemoduleid = ? AND recipientuserid = ? AND modulefirstviewed IS NULL',
+            $params);
+        foreach ($rs as $row) {
+            $row->modulefirstviewed = time();
+            $DB->update_record('block_homework_notification', $row);
+        }
+    }
+
+    public static function course_module_viewed(\core\event\course_module_viewed $event) {
+        $cmid = $event->objectid;
+        self::log_modulefirstviewed($cmid);
+
+    }
+
+    public static function submission_status_viewed(\mod_assign\event\submission_status_viewed $event) {
+        $cmid = $event->contextinstanceid;
+        self::log_modulefirstviewed($cmid);
+    }
 }

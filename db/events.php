@@ -22,13 +22,21 @@
  */
 defined('MOODLE_INTERNAL') || die();
 
-$observers = array(
-    array(
-        'eventname' => '\core\event\course_module_deleted',
+$observers = [
+    [
+        'eventname' => \core\event\course_module_deleted::class,
         'callback' => '\block_homework\observers::course_module_deleted'
-    ),
-    array(
-        'eventname' => '\core\event\message_viewed',
+    ],
+    [
+        'eventname' => \core\event\message_viewed::class,
         'callback' => '\block_homework\observers::message_viewed'
-    ),
-);
+    ],
+    [
+        'eventname' => \core\event\course_module_viewed::class,
+        'callback' => '\block_homework\observers::course_module_viewed'
+    ],
+    [
+        'eventname' => \mod_assign\event\submission_status_viewed::class,
+        'callback' => '\block_homework\observers::submission_status_viewed'
+    ]
+];

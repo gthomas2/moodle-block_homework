@@ -59,6 +59,7 @@ class ajaxgen_view_timetable extends ajaxgen_base {
         $PAGE->set_context(\context_system::instance());
 
         $candeleteany = has_capability('block/homework:deleteany', context_system::instance());
+        $caneditany = has_capability('block/homework:editany', context_system::instance());
 
         $homeworkaccessfile = block_homework_moodle_utils::is_edulink_present();
         if ($homeworkaccessfile !== false) {
@@ -166,26 +167,37 @@ class ajaxgen_view_timetable extends ajaxgen_base {
                                 'cmid' => $item->id
                             ]);
                             $attr = [
-                                'class' => 'ond_action_clone',
+                                'class' => 'ond_action ond_action_clone',
                                 'title' => $this->get_str('clone')
                             ];
-                            $clonelink = html_writer::link($cloneurl, null, $attr);
-                        } else {
-                            $clonelink = '';
+                            $clonelink = html_writer::link($cloneurl, ' ', $attr);
+                            $actionshtml .= $clonelink;
                         }
+
                         if ($iteminfuture) {
                             if ($item->userid === $USER->id || $candeleteany) {
-                                $actionshtml .= $clonelink;
                                 $attr = [
                                     'class' => 'ond_action ond_action_delete',
-                                    'title' => $this->get_str('delete')
+                                    'title' => get_string('delete')
                                 ];
+                                $delurl = new moodle_url('/blocks/homework/delete.php', [
+                                    'cmid' => $item->id
+                                ]);
+                                $actionshtml .= html_writer::link($delurl, null, $attr);
                             }
                         }
-                        $delurl = new moodle_url('/blocks/homework/delete.php', [
-                            'cmid' => $item->id
-                        ]);
-                        $actionshtml .= html_writer::link($delurl, null, $attr);
+                        if ($item->userid === $USER->id || $caneditany) {
+                            $attr = [
+                                'class' => 'ond_action ond_action_edit',
+                                'title' => get_string('delete')
+                            ];
+                            $editurl = new moodle_url('/blocks/homework/set.php', [
+                                'course' => $course->id,
+                                'edit' => $item->id
+                            ]);
+                            $actionshtml .= html_writer::link($editurl, null, $attr);
+                        }
+
                         $actions = new e\htmlTableCell(null, "ond_cell_actions", $actionshtml);
                         $table->add_cell($actions);
                         $datecell = new e\htmlTableCell(null, "ond_cell_date",
