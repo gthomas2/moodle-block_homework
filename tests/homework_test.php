@@ -256,4 +256,62 @@ class block_homework_homework_test extends \advanced_testcase {
         $message = reset($messages);
         $this->assertEquals('singleemail@test.local', $message->to);
     }
+
+    /**
+     * Make sure emails come from assignment owner.
+     * @throws \coding_exception
+     * @throws \moodle_exception
+     */
+    public function test_emailfromassignowner() {
+        global $DB, $CFG;
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        // Catch emails.
+        $mailsink = $this->redirectEmails();
+
+        $CFG->allowedemaildomains = 'local.test';
+        $expectedfromemail = 'teacheremail@local.test';
+
+        $dg = $this->getDataGenerator();
+        $user = $dg->create_user();
+        $teacher = $dg->create_user(['email' => $expectedfromemail]);
+        $course = $dg->create_course();
+        $dg->enrol_user($user->id, $course->id, 'student');
+        $dg->enrol_user($teacher->id, $course->id, 'teacher');
+        $this->setUser($teacher);
+        $assignmentduedate = time() + WEEKSECS;
+        $subject = 'Assignment from owner test';
+
+        $record = [
+            'allowsubmissionsfromdate' => time() - WEEKSECS,
+            'course' => $course->id,
+            'duedate' => $assignmentduedate,
+            'name' => $subject
+        ];
+        $assign = $dg->create_module('assign', $record);
+        list($course, $cm) = get_course_and_cm_from_instance($assign->id, 'assign');
+
+        $data = (object) [
+            'coursemoduleid' => $cm->id,
+            'created' => time() - DAYSECS,
+            'userid' => $teacher->id,
+            'subject' => $assign->name,
+            'duration' => 0,
+            'notifyparents' => 0,
+            'notifylearners' => 1,
+            'notesforlearnerssubject' => 'subject for learners',
+            'notesforlearners' => 'message for learners',
+            'notifyother' => 0,
+            'notifyotheremail' => 0
+        ];
+        $DB->insert_record('block_homework_assignment', $data);
+
+        block_homework_utils::send_new_assignment_notifications();
+
+        $messages = $mailsink->get_messages();
+        $this->assertEquals($expectedfromemail, reset($messages)->from);
+
+    }
 }
