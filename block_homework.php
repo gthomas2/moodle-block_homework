@@ -131,7 +131,9 @@ class block_homework extends \block_list {
             }
             foreach ($courses as $course) {
                 $homeworkactivities = array_merge($homeworkactivities,
-                    block_homework_utils::get_homework_for_course($course->id, $userid, true, $maxdaysage));
+                    block_homework_utils::get_homework_for_course($course->id, null, true, $maxdaysage));
+                // GT, removed $userid filter so that all homework activities for course are returned - was previously
+                // resulting in no homework showing for students.
             }
             if (!empty($homeworkactivities)) {
                 $homeworkhtml = block_homework_utils::homework_items_for_block_list($homeworkactivities, $userid, $onfrontpage,
