@@ -51,7 +51,7 @@ class block_homework_view_page extends e\block_homework_form_page_base {
             $title = $this->get_str('viewhomework');
         }
 
-        $this->userid = optional_param('displayuserid', null, PARAM_INT);
+        $this->userid = $USER->id;
         $this->usertype = block_homework_moodle_utils::get_user_type($this->userid);
         if ($this->usertype == "employee") {
             $title .= $this->get_str('teacherview');

@@ -498,7 +498,8 @@ class block_homework_set_page extends e\block_homework_form_page_base {
             }
         }
         $assscale = ($this->editingcmid == 0) ? 100 : $this->assignment->grade;
-        $todayepoch = optional_param('avail', time(), PARAM_INT);
+        $todayepoch = optional_param('avail', usertime(time()), PARAM_INT); // GT: Added usertime to cope with zimezones.
+
         $today = date('Y-m-d', $todayepoch);
         $assavaildate = ($this->editingcmid == 0) ? $today : $this->assignment->availabledate;
         $tomorrow = date('Y-m-d', $todayepoch + 24 * 60 * 60);

@@ -74,13 +74,14 @@ class ajaxgen_view_timetable extends ajaxgen_base {
         $SESSION->filtersetbyme = $filtersetbyme;
 
         if (empty($displayuserid)) {
-            if (empty($filtersetbyme)) {
-                $this->viewall = true;
-            }
             $displayuserid = $USER->id;
         }
         $date = optional_param('date', date('Y-m-d'), PARAM_ALPHANUMEXT);
         $marking = optional_param('marking', 0, PARAM_INT) == 1;
+
+        if (empty($filtersetbyme)) {
+            $this->viewall = true;
+        }
 
         if ($courseid == $siteid) {
             $courses = block_homework_moodle_utils::get_users_courses($displayuserid);
