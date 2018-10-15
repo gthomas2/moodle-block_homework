@@ -802,7 +802,7 @@ WHERE u.id IN ({$useridlist}) ORDER BY u.lastname, u.firstname";
     public static function get_assignment_participants($coursemoduleid) {
         $cache = cache::make('block_homework', 'participants');
         $participants = $cache->get($coursemoduleid);
-        if ($participants === false) {
+        if ($participants === false || (defined('PHPUNIT_TEST') && PHPUNIT_TEST)) {
             $ass = new assign(context_module::instance($coursemoduleid), null, null);
             try {
                 $participants = $ass->list_participants(0, true);

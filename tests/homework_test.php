@@ -28,6 +28,7 @@ namespace block_homework\tests;
 defined('MOODLE_INTERNAL') || die();
 
 use block_homework_utils;
+use stdClass;
 
 
 /**
@@ -160,6 +161,7 @@ class block_homework_homework_test extends \advanced_testcase {
             $assignmentduedate, $assignmentduration, $subject, $messagebody);
 
         $messages = $mailsink->get_messages();
+        $this->assertNotEmpty($messages);
         $message = reset($messages);
         $mailsink->clear();
         $body = quoted_printable_decode($message->body);
@@ -257,12 +259,101 @@ class block_homework_homework_test extends \advanced_testcase {
         $this->assertEquals('singleemail@test.local', $message->to);
     }
 
+    private function create_homework_assign($allowsubmissionsfromdate,
+                                            stdClass $course, $duedate,
+                                            stdClass $teacher, $subject) {
+        global $DB;
+
+        $teacherid = $teacher->id;
+
+        $dg = $this->getDataGenerator();
+        $record = [
+            'allowsubmissionsfromdate' => $allowsubmissionsfromdate,
+            'course' => $course->id,
+            'duedate' => $duedate,
+            'name' => $subject
+        ];
+        $assign = $dg->create_module('assign', $record);
+        list($course, $cm) = get_course_and_cm_from_instance($assign->id, 'assign');
+
+        $data = (object) [
+            'coursemoduleid' => $cm->id,
+            'created' => time() - DAYSECS,
+            'userid' => $teacherid,
+            'subject' => $subject,
+            'duration' => 0,
+            'notifyparents' => 0,
+            'notifylearners' => 1,
+            'notesforlearnerssubject' => 'subject for learners',
+            'notesforlearners' => 'message for learners',
+            'notifyother' => 0,
+            'notifyotheremail' => 0
+        ];
+        $hwassignid = $DB->insert_record('block_homework_assignment', $data);
+        $hwassign = $DB->get_record('block_homework_assignment', ['id' => $hwassignid]);
+
+        return [$assign, $hwassign];
+    }
+
     /**
      * Make sure emails come from assignment owner.
      * @throws \coding_exception
      * @throws \moodle_exception
      */
     public function test_emailfromassignowner() {
+        global $CFG;
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        // Catch emails.
+        $mailsink = $this->redirectEmails();
+
+        $CFG->allowedemaildomains = 'local.test';
+        $expectedfromemail = 'teacheremail@local.test';
+
+        $dg = $this->getDataGenerator();
+        $user = $dg->create_user();
+        $teacher = $dg->create_user(['email' => $expectedfromemail]);
+        $course = $dg->create_course();
+        $dg->enrol_user($user->id, $course->id, 'student');
+        $dg->enrol_user($teacher->id, $course->id, 'teacher');
+        $this->setUser($teacher);
+        $assignmentduedate = time() + WEEKSECS;
+        $subject = 'Assignment from owner test';
+
+        $this->create_homework_assign(time() - WEEKSECS, $course, $assignmentduedate, $teacher, $subject);
+
+        block_homework_utils::send_new_assignment_notifications();
+
+        $messages = $mailsink->get_messages();
+        $this->assertEquals($expectedfromemail, reset($messages)->from);
+
+    }
+
+    private function assert_messages_contain_to(\phpunit_phpmailer_sink $mailsink, $to) {
+        $messages = $mailsink->get_messages();
+        foreach ($messages as $message) {
+            if ($message->to === $to) {
+                return;
+            }
+        }
+        $this->fail('Message sink does not contain email with to address of "' . $to . '"');
+    }
+
+    private function assert_messages_not_contain_to(\phpunit_phpmailer_sink $mailsink, $to) {
+        $messages = $mailsink->get_messages();
+        foreach ($messages as $message) {
+            if ($message->to === $to) {
+                $this->fail('Message sink contains to email address of "' . $to . '"');
+            }
+        }
+    }
+
+    /**
+     * Test that a cron that fails doesnt keep resending it's emails.
+     */
+    public function test_interrupted_cron_no_resend() {
         global $DB, $CFG;
 
         $this->resetAfterTest();
@@ -284,34 +375,30 @@ class block_homework_homework_test extends \advanced_testcase {
         $assignmentduedate = time() + WEEKSECS;
         $subject = 'Assignment from owner test';
 
-        $record = [
-            'allowsubmissionsfromdate' => time() - WEEKSECS,
-            'course' => $course->id,
-            'duedate' => $assignmentduedate,
-            'name' => $subject
-        ];
-        $assign = $dg->create_module('assign', $record);
-        list($course, $cm) = get_course_and_cm_from_instance($assign->id, 'assign');
+        list ($assign, $hwassign) = $this->create_homework_assign(time() - WEEKSECS, $course, $assignmentduedate, $teacher, $subject);
 
-        $data = (object) [
-            'coursemoduleid' => $cm->id,
-            'created' => time() - DAYSECS,
-            'userid' => $teacher->id,
-            'subject' => $assign->name,
-            'duration' => 0,
-            'notifyparents' => 0,
-            'notifylearners' => 1,
-            'notesforlearnerssubject' => 'subject for learners',
-            'notesforlearners' => 'message for learners',
-            'notifyother' => 0,
-            'notifyotheremail' => 0
-        ];
-        $DB->insert_record('block_homework_assignment', $data);
+        // Fake user already been sent email - this would happen if the cron got interrupted.
+        $DB->insert_record('block_homework_notification', [
+            'coursemoduleid' => $hwassign->coursemoduleid,
+            'recipientuserid' => $user->id,
+            'recipientemail' => $user->email,
+            'created' => time(),
+            'messageid' => 99
+        ]);
 
+        // Make sure someone who already got an email doesn't receive it again.
         block_homework_utils::send_new_assignment_notifications();
+        $this->assert_messages_not_contain_to($mailsink, $user->email);
 
-        $messages = $mailsink->get_messages();
-        $this->assertEquals($expectedfromemail, reset($messages)->from);
+        // Make sure a user that didn't get an email does receive it.
+        $user2 = $dg->create_user();
+        $dg->enrol_user($user2->id, $course->id, 'student');
 
+        // This would be the state if the cron never completed.
+        $DB->execute('UPDATE {block_homework_assignment} SET notificationssent = 0');
+
+        // Make sure someone who already got an email doesn't receive it again.
+        block_homework_utils::send_new_assignment_notifications();
+        $this->assert_messages_contain_to($mailsink, $user2->email);
     }
 }

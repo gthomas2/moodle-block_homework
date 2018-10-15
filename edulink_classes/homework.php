@@ -468,9 +468,27 @@ class block_homework_utils {
         return '';
     }
 
+    public static function users_not_notified($users, $coursemoduleid) {
+        global $DB;
+
+        list($insql, $params) = $DB->get_in_or_equal(array_keys($users));
+        array_unshift($params, $coursemoduleid);
+
+        $sql = <<<SQL
+        SELECT u.*
+          FROM {user} u
+     LEFT JOIN {block_homework_notification} bhn
+            ON bhn.recipientuserid = u.id
+           AND bhn.coursemoduleid = ?
+         WHERE u.id $insql AND bhn.messageid IS NULL
+SQL;
+
+        return $DB->get_records_sql($sql, $params);
+    }
+
     public static function notify_learners($courseid, $coursemoduleid, $assignmentsubject, $assignmentname, $assignmentowner,
                                            $assignmentduedate, $assignmentduration, $messagesubject, $messagebody) {
-        global $CFG, $DB;
+        global $CFG;
 
         $errors = array();
         $variables = array(
@@ -484,10 +502,17 @@ class block_homework_utils {
             'learner_name ' => '',
             'learner_lastname' => '',
             'learner_firstname' => '');
+
         $learners = block_homework_moodle_utils::get_assignment_participants($coursemoduleid);
+        $usersnotnotified = self::users_not_notified($learners, $coursemoduleid);
         $lognotifications = get_config('block_homework', 'log_notifications');
+
         foreach ($learners as $learnerentry) {
-            $learner = $DB->get_record('user', array('id' => $learnerentry->id), 'id,firstname,lastname,email');
+            if (!isset($usersnotnotified[$learnerentry->id])) {
+                // Learner must have been notified already.
+                continue;
+            }
+            $learner = $usersnotnotified[$learnerentry->id];
             $variables["learner_name"] = $learner->firstname . " " . $learner->lastname;
             $variables["learner_lastname"] = $learner->lastname;
             $variables["learner_firstname"] = $learner->firstname;
